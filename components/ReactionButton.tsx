@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const REACTIONS = [
@@ -17,6 +18,8 @@ type ReactionButtonProps = {
 };
 
 export default function ReactionButton({ postId }: ReactionButtonProps) {
+  const router = useRouter();
+
   const [myReaction, setMyReaction] = useState<string | null>(null);
   const [count, setCount] = useState(0);
   const [showPicker, setShowPicker] = useState(false);
@@ -34,22 +37,25 @@ export default function ReactionButton({ postId }: ReactionButtonProps) {
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
+
       if (sessionData.session) {
-        const mine = allReactions?.find(
-          (r) => r.user_id === sessionData.session.user.id
-        );
+        const myUserId = sessionData.session.user.id;
+
+        const mine = allReactions?.find((r) => r.user_id === myUserId);
         setMyReaction(mine ? mine.type : null);
       }
     }
 
     loadReactions();
   }, [postId]);
-  
+
   async function setReaction(type: string) {
     const { data: sessionData } = await supabase.auth.getSession();
 
+    // Not logged in: sign up / log in, then come back to this same page
     if (!sessionData.session) {
-      window.location.href = "/signup";
+      const here = window.location.pathname + window.location.search;
+      router.push(`/signup?returnTo=${encodeURIComponent(here)}`);
       return;
     }
 
@@ -76,7 +82,9 @@ export default function ReactionButton({ postId }: ReactionButtonProps) {
       setMyReaction(type);
     } else {
       // First reaction
-      await supabase.from("likes").insert({ post_id: postId, user_id: userId, type });
+      await supabase
+        .from("likes")
+        .insert({ post_id: postId, user_id: userId, type });
 
       setMyReaction(type);
       setCount((c) => c + 1);
