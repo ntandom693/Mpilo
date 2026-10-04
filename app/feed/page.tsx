@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ReactionButton from "@/components/ReactionButton";
 import { supabase } from "@/lib/supabase";
 import {
@@ -13,6 +14,17 @@ import {
   Sparkles,
   MoreHorizontal,
 } from "lucide-react";
+
+// WhatsApp number that receives reports (South Africa, no + or leading 0)
+const REPORT_WHATSAPP = "27697858221";
+
+const REPORT_REASONS = [
+  "Inappropriate content",
+  "Spam or scam",
+  "Harassment or bullying",
+  "Fake or misleading",
+  "Something else",
+];
 
 type Post = {
   id: number;
@@ -51,10 +63,13 @@ function timeAgo(dateString: string) {
 }
 
 export default function Feed() {
+  const router = useRouter();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [people, setPeople] = useState<Person[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
+  const [reportingPost, setReportingPost] = useState<Post | null>(null);
 
   useEffect(() => {
     async function loadPeople() {
@@ -131,14 +146,45 @@ export default function Feed() {
     setPosts(posts.filter((p) => p.id !== postId));
   }
 
-  async function goToMyProfile() {
+  // Opens WhatsApp with a ready-made report message
+  function sendReport(reason: string) {
+    if (!reportingPost) return;
+
+    const snippet =
+      reportingPost.content.length > 100
+        ? reportingPost.content.slice(0, 100) + "..."
+        : reportingPost.content;
+
+    const message =
+      `Report from Denverr\n` +
+      `Reason: ${reason}\n` +
+      `Posted by: ${reportingPost.authorName}\n` +
+      `Post ID: ${reportingPost.id}\n` +
+      `Post: "${snippet}"\n` +
+      `Link: ${window.location.origin}/comments/${reportingPost.id}`;
+
+    const url = `https://wa.me/${REPORT_WHATSAPP}?text=${encodeURIComponent(message)}`;
+
+    window.open(url, "_blank");
+    setReportingPost(null);
+  }
+
+  // Share something: if not logged in, sign up / log in,
+  // then come straight back to the compose page.
+  async function handleCompose() {
     const { data } = await supabase.auth.getSession();
 
     if (data.session) {
-      window.location.href = `/profile/${data.session.user.id}`;
+      router.push("/compose");
     } else {
-      window.location.href = "/signup";
+      router.push(`/signup?returnTo=${encodeURIComponent("/compose")}`);
     }
+  }
+
+  // The /profile page decides: logged in -> your profile,
+  // not logged in -> login, then your profile.
+  function goToMyProfile() {
+    router.push("/profile");
   }
 
   return (
@@ -158,10 +204,10 @@ export default function Feed() {
           </div>
 
           <Link href="/feedback">
-  <div className="w-10 h-10 rounded-full bg-white border border-[#E8EAF0] flex items-center justify-center shadow-sm cursor-pointer active:scale-90 transition-transform">
-    <Sparkles size={18} strokeWidth={1.8} />
-  </div>
-</Link>
+            <div className="w-10 h-10 rounded-full bg-white border border-[#E8EAF0] flex items-center justify-center shadow-sm cursor-pointer active:scale-90 transition-transform">
+              <Sparkles size={18} strokeWidth={1.8} />
+            </div>
+          </Link>
         </div>
 
         <p className="text-[#737983] mt-5 text-[15px]">
@@ -214,17 +260,19 @@ export default function Feed() {
 
       {/* Create post */}
       <section className="px-6 mt-7">
-        <Link href="/compose">
-          <div className="bg-white rounded-[20px] px-5 py-4 border border-[#E8EAF0] flex items-center justify-between active:scale-[0.99] transition">
-            <span className="text-[#737983] text-[15px]">
-              Share something.
-            </span>
+        <button
+          type="button"
+          onClick={handleCompose}
+          className="w-full text-left bg-white rounded-[20px] px-5 py-4 border border-[#E8EAF0] flex items-center justify-between active:scale-[0.99] transition"
+        >
+          <span className="text-[#737983] text-[15px]">
+            Share something.
+          </span>
 
-            <div className="w-9 h-9 rounded-full bg-[#111318] text-white flex items-center justify-center">
-              <span className="text-[20px] leading-none">+</span>
-            </div>
+          <div className="w-9 h-9 rounded-full bg-[#111318] text-white flex items-center justify-center">
+            <span className="text-[20px] leading-none">+</span>
           </div>
-        </Link>
+        </button>
       </section>
 
       {/* Loading */}
@@ -291,20 +339,23 @@ export default function Feed() {
               </Link>
 
               <div className="ml-auto flex items-center gap-2">
-                {post.user_id === myId && (
+                {post.user_id === myId ? (
                   <button
                     onClick={() => handleDeletePost(post.id)}
                     className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8F98] hover:bg-[#ECEEF2] hover:text-red-500 transition"
+                    aria-label="Delete post"
                   >
                     <Trash2 size={16} strokeWidth={1.8} />
                   </button>
+                ) : (
+                  <button
+                    onClick={() => setReportingPost(post)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8F98] hover:bg-[#ECEEF2] transition"
+                    aria-label="Report post"
+                  >
+                    <MoreHorizontal size={19} strokeWidth={1.8} />
+                  </button>
                 )}
-
-                <button
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[#8A8F98] hover:bg-[#ECEEF2] transition"
-                >
-                  <MoreHorizontal size={19} strokeWidth={1.8} />
-                </button>
               </div>
             </div>
 
@@ -326,7 +377,7 @@ export default function Feed() {
             )}
 
             {/* Caption + actions */}
-            <div className={post.image_url ? "px-6 mt-4" : "px-6 mt-4"}>
+            <div className="px-6 mt-4">
 
               {/* Actions */}
               <div className="flex items-center gap-5 mb-3">
@@ -365,6 +416,48 @@ export default function Feed() {
         ))}
 
       </section>
+
+      {/* REPORT SHEET */}
+      {reportingPost && (
+        <div className="fixed inset-0 z-[60] flex items-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setReportingPost(null)}
+          />
+
+          <div className="relative w-full bg-white rounded-t-[26px] px-6 pt-5 pb-8">
+            <div className="w-10 h-1 bg-[#E2E5E9] rounded-full mx-auto mb-5" />
+
+            <h3 className="text-[18px] font-bold tracking-[-0.02em]">
+              Report this post
+            </h3>
+
+            <p className="text-[13px] text-[#8A8F98] mt-1">
+              Why are you reporting it? This opens WhatsApp so you can send
+              the report to us.
+            </p>
+
+            <div className="mt-5 space-y-2">
+              {REPORT_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => sendReport(reason)}
+                  className="w-full text-left bg-[#F7F8FA] border border-[#E7E9ED] rounded-[14px] px-4 py-3.5 text-[14px] font-medium active:scale-[0.99] transition"
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setReportingPost(null)}
+              className="w-full mt-4 py-3 text-[14px] font-semibold text-[#6F727B]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Bottom navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#E8EAF0] px-8 py-3">
