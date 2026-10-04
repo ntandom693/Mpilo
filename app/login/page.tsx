@@ -14,7 +14,13 @@ export default function Login() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/feed";
+
+  // Only allow pages inside our own app (safety check)
+  const rawReturnTo = searchParams.get("returnTo");
+  const returnTo =
+    rawReturnTo && rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//")
+      ? rawReturnTo
+      : "/feed";
 
   async function handleLogin() {
     setLoading(true);
@@ -35,16 +41,25 @@ export default function Login() {
     router.push(returnTo);
   }
 
-  const canSubmit =
-    email.trim() !== "" &&
-    password.trim() !== "";
+  async function handleGoogle() {
+    setError("");
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${returnTo}`,
+      },
+    });
+
+    if (error) setError(error.message);
+  }
+
+  const canSubmit = email.trim() !== "" && password.trim() !== "";
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] text-[#111318] px-5 py-6">
-
       {/* Top bar */}
       <div className="flex items-center justify-between">
-
         <Link href={returnTo}>
           <button
             type="button"
@@ -59,16 +74,12 @@ export default function Login() {
         </span>
 
         <div className="w-10" />
-
       </div>
 
       <div className="w-full max-w-sm mx-auto pt-16 pb-10">
-
         {/* Intro */}
         <div>
-          <p className="text-sm font-medium text-[#8B8E97]">
-            WELCOME BACK
-          </p>
+          <p className="text-sm font-medium text-[#8B8E97]">WELCOME BACK</p>
 
           <h1 className="mt-2 text-[36px] leading-[1.05] font-semibold tracking-[-0.045em]">
             Good to see
@@ -83,7 +94,6 @@ export default function Login() {
 
         {/* Form */}
         <div className="mt-10 space-y-5">
-
           <div>
             <label className="text-xs font-semibold text-[#6F727B]">
               Email
@@ -116,12 +126,9 @@ export default function Login() {
 
           {error && (
             <div className="rounded-2xl bg-[#FFF1F1] border border-[#FFD6D6] px-4 py-3">
-              <p className="text-sm text-[#C62828]">
-                {error}
-              </p>
+              <p className="text-sm text-[#C62828]">{error}</p>
             </div>
           )}
-
         </div>
 
         {/* Login button */}
@@ -138,6 +145,22 @@ export default function Login() {
               <ArrowRight size={17} />
             </>
           )}
+        </button>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3 mt-6">
+          <div className="flex-1 h-px bg-[#E7E8EC]" />
+          <span className="text-xs text-[#9A9DA5]">or</span>
+          <div className="flex-1 h-px bg-[#E7E8EC]" />
+        </div>
+
+        {/* Google button */}
+        <button
+          type="button"
+          onClick={handleGoogle}
+          className="mt-6 w-full bg-white border border-[#E7E8EC] text-[#111318] py-4 rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.99] transition"
+        >
+          Continue with Google
         </button>
 
         {/* Signup */}
@@ -163,9 +186,7 @@ export default function Login() {
           </a>
           .
         </p>
-
       </div>
-
     </main>
   );
 }
