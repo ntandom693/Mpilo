@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import {
   Home,
   Building2,
@@ -15,7 +15,7 @@ import {
   MapPin,
   ShieldCheck,
   ChevronRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 type Unit = {
   room_type: string;
@@ -45,7 +45,7 @@ export default function Stay() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [myId, setMyId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -58,18 +58,18 @@ export default function Stay() {
 
     async function loadListings() {
       const { data, error } = await supabase
-        .from('listings')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("listings")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (!error && data) {
         const withUnits = await Promise.all(
           data.map(async (listing) => {
             if (listing.is_residence) {
               const { data: units } = await supabase
-                .from('listing_units')
-                .select('room_type, price')
-                .eq('listing_id', listing.id);
+                .from("listing_units")
+                .select("room_type, price")
+                .eq("listing_id", listing.id);
 
               return {
                 ...listing,
@@ -93,23 +93,29 @@ export default function Stay() {
     init();
   }, []);
 
+  // List a place: if not logged in, sign up / log in, then come back
+  // straight to the upload page.
   async function handleUploadRoom() {
     const { data } = await supabase.auth.getSession();
 
     if (data.session) {
-      router.push('/stay/upload');
+      router.push("/stay/upload");
     } else {
-      router.push('/signup?returnTo=/stay');
+      router.push(`/signup?returnTo=${encodeURIComponent("/stay/upload")}`);
     }
   }
 
+  // View details: if not logged in, sign up / log in, then come back
+  // straight to that room.
   async function handleViewRoom(listingId: number) {
     const { data } = await supabase.auth.getSession();
 
     if (data.session) {
       router.push(`/stay/room/${listingId}`);
     } else {
-      router.push(`/signup?returnTo=/stay/room/${listingId}`);
+      router.push(
+        `/signup?returnTo=${encodeURIComponent(`/stay/room/${listingId}`)}`
+      );
     }
   }
 
@@ -120,25 +126,27 @@ export default function Stay() {
 
     if (!confirmed) return;
 
-    await supabase.from('listing_units').delete().eq('listing_id', listingId);
+    await supabase
+      .from("listing_units")
+      .delete()
+      .eq("listing_id", listingId);
 
-    await supabase.from('listings').delete().eq('id', listingId);
+    await supabase
+      .from("listings")
+      .delete()
+      .eq("id", listingId);
 
     setListings(listings.filter((l) => l.id !== listingId));
   }
 
-  async function goToMyProfile() {
-    const { data } = await supabase.auth.getSession();
-
-    if (data.session) {
-      window.location.href = `/profile/${data.session.user.id}`;
-    } else {
-      window.location.href = '/signup';
-    }
+  // The /profile page decides: logged in -> your profile,
+  // not logged in -> login, then your profile.
+  function goToMyProfile() {
+    router.push("/profile");
   }
 
   const filteredListings = listings.filter((listing) => {
-    if (searchTerm.trim() === '') return true;
+    if (searchTerm.trim() === "") return true;
 
     const term = searchTerm.toLowerCase();
 
@@ -230,8 +238,8 @@ export default function Stay() {
 
           {filteredListings.length > 0 && (
             <span className="text-[12px] text-[#9297A1]">
-              {filteredListings.length}{' '}
-              {filteredListings.length === 1 ? 'listing' : 'listings'}
+              {filteredListings.length}{" "}
+              {filteredListings.length === 1 ? "listing" : "listings"}
             </span>
           )}
         </div>
@@ -242,11 +250,8 @@ export default function Stay() {
         <div className="px-6 mt-8">
           <div className="bg-white border border-[#E7E9ED] rounded-[24px] p-5 animate-pulse">
             <div className="h-52 rounded-[18px] bg-[#ECEEF1]" />
-
             <div className="h-5 w-2/3 bg-[#ECEEF1] rounded mt-5" />
-
             <div className="h-4 w-1/2 bg-[#ECEEF1] rounded mt-3" />
-
             <div className="h-11 w-full bg-[#ECEEF1] rounded-[14px] mt-5" />
           </div>
         </div>
@@ -262,14 +267,14 @@ export default function Stay() {
 
             <h3 className="font-semibold text-[16px] mt-5">
               {listings.length === 0
-                ? 'No places here yet.'
-                : 'Nothing matches your search.'}
+                ? "No places here yet."
+                : "Nothing matches your search."}
             </h3>
 
             <p className="text-[#8A8F98] text-[13px] leading-5 mt-2 max-w-[280px] mx-auto">
               {listings.length === 0
-                ? 'Be one of the first people to put a place on Denverr.'
-                : 'Try searching for another area or place.'}
+                ? "Be one of the first people to put a place on Denverr."
+                : "Try searching for another area or place."}
             </p>
 
             {listings.length === 0 && (
@@ -312,8 +317,8 @@ export default function Stay() {
                   <div className="absolute top-4 left-4">
                     <span className="bg-white/95 backdrop-blur-sm text-[#111318] text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-sm">
                       {listing.is_residence
-                        ? 'Residence'
-                        : listing.room_type || 'Accommodation'}
+                        ? "Residence"
+                        : listing.room_type || "Accommodation"}
                     </span>
                   </div>
 
@@ -399,7 +404,7 @@ export default function Stay() {
                 {listing.amenities && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {listing.amenities
-                      .split(',')
+                      .split(",")
                       .map((a) => a.trim())
                       .filter(Boolean)
                       .map((amenity) => (
@@ -433,7 +438,6 @@ export default function Stay() {
           <Link href="/feed">
             <div className="flex flex-col items-center gap-1 text-[#8A8F98]">
               <Home size={22} strokeWidth={1.8} />
-
               <span className="text-[10px] font-medium">Home</span>
             </div>
           </Link>
@@ -441,7 +445,6 @@ export default function Stay() {
           <Link href="/stay">
             <div className="flex flex-col items-center gap-1 text-[#111318]">
               <Building2 size={22} strokeWidth={2} />
-
               <span className="text-[10px] font-semibold">Stay</span>
             </div>
           </Link>
@@ -451,7 +454,6 @@ export default function Stay() {
             className="flex flex-col items-center gap-1 text-[#8A8F98]"
           >
             <User size={22} strokeWidth={1.8} />
-
             <span className="text-[10px] font-medium">Profile</span>
           </button>
         </div>
