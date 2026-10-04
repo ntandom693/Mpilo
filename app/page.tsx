@@ -11,12 +11,21 @@ export default function Home() {
             Denverr
           </span>
 
-          <Link
-            href="/feed"
-            className="text-sm font-medium text-gray-500 hover:text-[#111318] transition"
-          >
-            Explore
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/login?returnTo=/stay"
+              className="text-sm font-medium text-gray-500 hover:text-[#111318] transition"
+            >
+              Log in
+            </Link>
+
+            <Link
+              href="/feed"
+              className="text-sm font-medium text-gray-500 hover:text-[#111318] transition"
+            >
+              Explore
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -36,7 +45,7 @@ export default function Home() {
             Your campus, your people.
           </p>
 
-          <div className="mt-8 flex items-center justify-center gap-3">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
 
             <Link
               href="/feed"
@@ -46,7 +55,7 @@ export default function Home() {
             </Link>
 
             <Link
-              href="/signup?returnTo=/"
+              href="/signup?returnTo=/stay"
               className="px-6 py-3 rounded-full bg-[#111318] text-white text-sm font-semibold hover:bg-black active:scale-[0.98] transition"
             >
               Join Denverr
