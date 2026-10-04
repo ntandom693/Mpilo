@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,6 +10,8 @@ type CommentLikeButtonProps = {
 };
 
 export default function CommentLikeButton({ commentId }: CommentLikeButtonProps) {
+  const router = useRouter();
+
   const [liked, setLiked] = useState(false);
   const [count, setCount] = useState(0);
 
@@ -24,10 +27,14 @@ export default function CommentLikeButton({ commentId }: CommentLikeButtonProps)
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
+
       if (sessionData.session) {
+        const myUserId = sessionData.session.user.id;
+
         const alreadyLiked = allLikes?.some(
-          (like) => like.user_id === sessionData.session.user.id
+          (like) => like.user_id === myUserId
         );
+
         setLiked(!!alreadyLiked);
       }
     }
@@ -38,8 +45,10 @@ export default function CommentLikeButton({ commentId }: CommentLikeButtonProps)
   async function handleLike() {
     const { data: sessionData } = await supabase.auth.getSession();
 
+    // Not logged in: sign up / log in, then come back to this same page
     if (!sessionData.session) {
-      window.location.href = "/signup";
+      const here = window.location.pathname + window.location.search;
+      router.push(`/signup?returnTo=${encodeURIComponent(here)}`);
       return;
     }
 
@@ -55,7 +64,9 @@ export default function CommentLikeButton({ commentId }: CommentLikeButtonProps)
       setLiked(false);
       setCount((c) => c - 1);
     } else {
-      await supabase.from("comment_likes").insert({ comment_id: commentId, user_id: userId });
+      await supabase
+        .from("comment_likes")
+        .insert({ comment_id: commentId, user_id: userId });
 
       setLiked(true);
       setCount((c) => c + 1);
