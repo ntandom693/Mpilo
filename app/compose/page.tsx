@@ -1,65 +1,128 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Camera, X, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, X, Image as ImageIcon } from "lucide-react";
+
+const MAX_PHOTOS = 10;
 
 export default function Compose() {
   const [text, setText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [myInitial, setMyInitial] = useState("D");
   const router = useRouter();
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0];
+  useEffect(() => {
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
 
-    if (selected) {
-      setFile(selected);
-      setPreview(URL.createObjectURL(selected));
-    }
-  }
-
-  function removePhoto() {
-    setFile(null);
-    setPreview(null);
-  }
-
-  async function handlePost() {
-    if (!text.trim() || uploading) return;
-
-    setUploading(true);
-
-    let imageUrl = null;
-
-    if (file) {
-      const fileName = `${Date.now()}-${file.name}`;
-
-      const { error } = await supabase.storage
-        .from("photos")
-        .upload(fileName, file);
-
-      if (error) {
-        alert("Photo upload failed: " + error.message);
-        setUploading(false);
+      // Not logged in: sign up / log in, then come back here
+      if (!user) {
+        router.replace(`/signup?returnTo=${encodeURIComponent("/compose")}`);
         return;
       }
 
-      const { data } = supabase.storage
-        .from("photos")
-        .getPublicUrl(fileName);
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("first_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      imageUrl = data.publicUrl;
+      if (profile) {
+        setMyAvatar(profile.avatar_url);
+        if (profile.first_name) {
+          setMyInitial(profile.first_name.charAt(0).toUpperCase());
+        }
+      }
     }
 
+    init();
+  }, [router]);
+
+  function handleFilesChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files || []);
+
+    // Reset so the same photo can be picked again later
+    e.target.value = "";
+
+    if (selected.length === 0) return;
+
+    const room = MAX_PHOTOS - files.length;
+    const toAdd = selected.slice(0, room);
+
+    if (selected.length > room) {
+      alert(`You can add up to ${MAX_PHOTOS} photos per post.`);
+    }
+
+    setFiles([...files, ...toAdd]);
+    setPreviews([...previews, ...toAdd.map((f) => URL.createObjectURL(f))]);
+  }
+
+  function removePhoto(index: number) {
+    URL.revokeObjectURL(previews[index]);
+
+    setFiles(files.filter((_, i) => i !== index));
+    setPreviews(previews.filter((_, i) => i !== index));
+  }
+
+  const canPost = (text.trim() !== "" || files.length > 0) && !uploading;
+
+  async function handlePost() {
+    if (!canPost) return;
+
+    setUploading(true);
+
     const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+
+    if (!userId) {
+      setUploading(false);
+      router.push(`/signup?returnTo=${encodeURIComponent("/compose")}`);
+      return;
+    }
+
+    let imageUrls: string[] = [];
+
+    if (files.length > 0) {
+      try {
+        imageUrls = await Promise.all(
+          files.map(async (file, i) => {
+            const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+            const fileName = `${Date.now()}-${i}-${safeName}`;
+
+            const { error } = await supabase.storage
+              .from("photos")
+              .upload(fileName, file);
+
+            if (error) throw error;
+
+            const { data } = supabase.storage
+              .from("photos")
+              .getPublicUrl(fileName);
+
+            return data.publicUrl;
+          })
+        );
+      } catch (err) {
+        const message =
+          (err as { message?: string })?.message || "Please try again.";
+        alert("Photo upload failed: " + message);
+        setUploading(false);
+        return;
+      }
+    }
 
     const { error: insertError } = await supabase.from("posts").insert({
       content: text,
-      image_url: imageUrl,
-      user_id: sessionData.session?.user.id,
+      image_url: imageUrls[0] || null,
+      image_urls: imageUrls,
+      user_id: userId,
     });
 
     if (insertError) {
@@ -73,7 +136,7 @@ export default function Compose() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-[#111318] px-5 pt-5 pb-8">
+    <main className="min-h-screen bg-[#F7F8FA] text-[#111318] px-5 pt-5 pb-32">
 
       {/* Top bar */}
       <div className="flex items-center justify-between">
@@ -94,7 +157,7 @@ export default function Compose() {
         <button
           type="button"
           onClick={handlePost}
-          disabled={text.trim() === "" || uploading}
+          disabled={!canPost}
           className="text-[15px] font-semibold text-[#111318] disabled:text-[#B8BAC1] transition"
         >
           {uploading ? "Posting..." : "Post"}
@@ -107,9 +170,17 @@ export default function Compose() {
 
         <div className="flex items-start gap-3">
 
-          <div className="w-10 h-10 rounded-full bg-[#111318] text-white flex items-center justify-center font-semibold text-sm shrink-0">
-            D
-          </div>
+          {myAvatar ? (
+            <img
+              src={myAvatar}
+              alt="You"
+              className="w-10 h-10 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-[#111318] text-white flex items-center justify-center font-semibold text-sm shrink-0">
+              {myInitial}
+            </div>
+          )}
 
           <div className="flex-1 pt-1">
 
@@ -122,7 +193,7 @@ export default function Compose() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Share something..."
-              className="w-full bg-transparent text-[21px] leading-[1.45] tracking-[-0.02em] placeholder-[#A2A5AD] resize-none focus:outline-none min-h-[180px]"
+              className="w-full bg-transparent text-[21px] leading-[1.45] tracking-[-0.02em] placeholder-[#A2A5AD] resize-none focus:outline-none min-h-[140px]"
             />
 
           </div>
@@ -131,24 +202,36 @@ export default function Compose() {
 
       </section>
 
-      {/* Photo preview */}
-      {preview && (
-        <div className="relative mt-4 rounded-[24px] overflow-hidden bg-white border border-[#E7E8EC]">
+      {/* Photo previews */}
+      {previews.length > 0 && (
+        <div
+          className={`mt-4 ${
+            previews.length === 1 ? "" : "grid grid-cols-2 gap-2"
+          }`}
+        >
+          {previews.map((src, index) => (
+            <div
+              key={src}
+              className="relative rounded-[24px] overflow-hidden bg-white border border-[#E7E8EC]"
+            >
+              <img
+                src={src}
+                alt={`Photo ${index + 1}`}
+                className={`w-full object-cover ${
+                  previews.length === 1 ? "max-h-[430px]" : "aspect-square"
+                }`}
+              />
 
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full max-h-[430px] object-cover"
-          />
-
-          <button
-            type="button"
-            onClick={removePhoto}
-            className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/70 text-white flex items-center justify-center backdrop-blur-sm active:scale-95 transition"
-          >
-            <X size={18} />
-          </button>
-
+              <button
+                type="button"
+                onClick={() => removePhoto(index)}
+                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/70 text-white flex items-center justify-center backdrop-blur-sm active:scale-95 transition"
+                aria-label="Remove photo"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -157,7 +240,11 @@ export default function Compose() {
 
         <div className="max-w-xl mx-auto flex items-center justify-between">
 
-          <label className="cursor-pointer">
+          <label
+            className={`cursor-pointer ${
+              files.length >= MAX_PHOTOS ? "opacity-40 pointer-events-none" : ""
+            }`}
+          >
 
             <div className="flex items-center gap-2 text-[#111318]">
               <div className="w-10 h-10 rounded-full bg-white border border-[#E7E8EC] flex items-center justify-center">
@@ -165,14 +252,17 @@ export default function Compose() {
               </div>
 
               <span className="text-sm font-medium">
-                Photo
+                {files.length > 0
+                  ? `Photos ${files.length}/${MAX_PHOTOS}`
+                  : "Photos"}
               </span>
             </div>
 
             <input
               type="file"
               accept="image/*"
-              onChange={handleFileChange}
+              multiple
+              onChange={handleFilesChange}
               className="hidden"
             />
 
