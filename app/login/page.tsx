@@ -50,19 +50,6 @@ export default function Login() {
     router.push(returnTo);
   }
 
-  async function handleGoogle() {
-    setError("");
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${returnTo}`,
-      },
-    });
-
-    if (error) setError(error.message);
-  }
-
   const canSubmit = email.trim() !== "" && password.trim() !== "";
 
   return (
@@ -154,22 +141,6 @@ export default function Login() {
               <ArrowRight size={17} />
             </>
           )}
-        </button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 mt-6">
-          <div className="flex-1 h-px bg-[#E7E8EC]" />
-          <span className="text-xs text-[#9A9DA5]">or</span>
-          <div className="flex-1 h-px bg-[#E7E8EC]" />
-        </div>
-
-        {/* Google button */}
-        <button
-          type="button"
-          onClick={handleGoogle}
-          className="mt-6 w-full bg-white border border-[#E7E8EC] text-[#111318] py-4 rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.99] transition"
-        >
-          Continue with Google
         </button>
 
         {/* Signup */}
