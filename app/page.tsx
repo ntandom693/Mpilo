@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-[#111318] flex flex-col px-6">
+    <main className="min-h-[100dvh] bg-[#F7F8FA] text-[#111318] flex flex-col px-6">
 
       {/* CENTER */}
       <section className="flex-1 flex flex-col items-center justify-center text-center">
@@ -22,7 +22,7 @@ export default function Home() {
       </section>
 
       {/* BOTTOM */}
-      <section className="w-full max-w-sm mx-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <section className="w-full max-w-sm mx-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
 
         <Link
           href="/signup?returnTo=/feed"
@@ -38,7 +38,7 @@ export default function Home() {
           Explore
         </Link>
 
-        <p className="text-center text-sm text-[#7A7D85] mt-6">
+        <p className="text-center text-sm text-[#7A7D85] mt-5">
           Already on Denverr?{" "}
           <Link
             href="/login?returnTo=/feed"
@@ -48,7 +48,7 @@ export default function Home() {
           </Link>
         </p>
 
-        <p className="text-center text-[11px] text-[#9A9DA5] mt-6">
+        <p className="text-center text-[11px] text-[#9A9DA5] mt-4">
           <Link href="/privacy" className="hover:text-[#111318] transition">
             Privacy Policy
           </Link>
