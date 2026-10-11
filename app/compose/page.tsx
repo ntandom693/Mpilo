@@ -145,6 +145,7 @@ export default function Compose() {
           <button
             type="button"
             className="w-10 h-10 rounded-full bg-white border border-[#E7E8EC] flex items-center justify-center text-[#111318] active:scale-95 transition"
+            aria-label="Back to feed"
           >
             <ArrowLeft size={19} strokeWidth={2} />
           </button>
@@ -154,14 +155,7 @@ export default function Compose() {
           Share
         </h1>
 
-        <button
-          type="button"
-          onClick={handlePost}
-          disabled={!canPost}
-          className="text-[15px] font-semibold text-[#111318] disabled:text-[#B8BAC1] transition"
-        >
-          {uploading ? "Posting..." : "Post"}
-        </button>
+        <div className="w-10 h-10" />
 
       </div>
 
@@ -268,8 +262,21 @@ export default function Compose() {
 
           </label>
 
-          <div className="text-xs text-[#9A9DA5]">
-            {text.length > 0 ? `${text.length}` : ""}
+          <div className="flex items-center gap-4">
+
+            <span className="text-xs text-[#9A9DA5]">
+              {text.length > 0 ? `${text.length}` : ""}
+            </span>
+
+            <button
+              type="button"
+              onClick={handlePost}
+              disabled={!canPost}
+              className="bg-[#111318] text-white px-6 py-2.5 rounded-full text-[14px] font-semibold disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition"
+            >
+              {uploading ? "Posting..." : "Post"}
+            </button>
+
           </div>
 
         </div>
