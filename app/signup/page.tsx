@@ -38,10 +38,20 @@ export default function SignUp() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
 
+    // Reset so the same photo can be picked again after removing it
+    e.target.value = "";
+
     if (selected) {
       setFile(selected);
       setPreview(URL.createObjectURL(selected));
     }
+  }
+
+  function handleRemovePhoto() {
+    if (preview) URL.revokeObjectURL(preview);
+
+    setFile(null);
+    setPreview(null);
   }
 
   async function handleSignUp() {
@@ -90,19 +100,6 @@ export default function SignUp() {
     router.push(returnTo);
   }
 
-  async function handleGoogle() {
-    setError("");
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${returnTo}`,
-      },
-    });
-
-    if (error) setError(error.message);
-  }
-
   const canSubmit =
     firstName.trim() !== "" &&
     lastName.trim() !== "" &&
@@ -135,34 +132,16 @@ export default function SignUp() {
           <p className="text-sm font-medium text-[#8B8E97]">WELCOME</p>
 
           <h1 className="mt-2 text-[34px] leading-[1.08] font-semibold tracking-[-0.04em]">
-            Make yourself
-            <br />
-            at home.
+            Join Denverr.
           </h1>
 
           <p className="mt-4 text-[15px] leading-6 text-[#6F727B] max-w-[320px]">
-            Create your Denverr account and find your place on campus.
+            Create your account to get started.
           </p>
         </div>
 
-        {/* Google button */}
-        <button
-          type="button"
-          onClick={handleGoogle}
-          className="mt-8 w-full bg-white border border-[#E7E8EC] text-[#111318] py-4 rounded-2xl font-semibold text-[15px] flex items-center justify-center gap-2 active:scale-[0.99] transition"
-        >
-          Continue with Google
-        </button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 mt-6">
-          <div className="flex-1 h-px bg-[#E7E8EC]" />
-          <span className="text-xs text-[#9A9DA5]">or use your email</span>
-          <div className="flex-1 h-px bg-[#E7E8EC]" />
-        </div>
-
         {/* Profile photo */}
-        <div className="flex items-center gap-4 mt-8">
+        <div className="flex items-center gap-4 mt-9">
           <div className="relative w-[72px] h-[72px] shrink-0">
             <div className="w-full h-full rounded-full bg-[#111318] overflow-hidden flex items-center justify-center">
               {preview ? (
@@ -193,12 +172,22 @@ export default function SignUp() {
           <div>
             <p className="text-sm font-semibold">Your profile photo</p>
 
-            <p className="text-xs text-[#8B8E97] mt-1">Optional for now</p>
+            {preview ? (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="text-xs font-semibold text-[#C62828] mt-1"
+              >
+                Remove photo
+              </button>
+            ) : (
+              <p className="text-xs text-[#8B8E97] mt-1">Optional for now</p>
+            )}
           </div>
         </div>
 
         {/* Form */}
-        <div className="mt-8 space-y-5">
+        <div className="mt-9 space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-semibold text-[#6F727B]">
