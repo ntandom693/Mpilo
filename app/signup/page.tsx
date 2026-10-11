@@ -26,6 +26,15 @@ export default function SignUp() {
       ? rawReturnTo
       : "/feed";
 
+  // Back goes to wherever the person came from, never into a loop
+  function handleBack() {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/feed");
+    }
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
 
@@ -104,14 +113,14 @@ export default function SignUp() {
     <main className="min-h-screen bg-[#F7F8FA] text-[#111318] px-5 py-6">
       {/* Top bar */}
       <div className="flex items-center justify-between">
-        <Link href={returnTo}>
-          <button
-            type="button"
-            className="w-10 h-10 rounded-full bg-white border border-[#E7E8EC] flex items-center justify-center active:scale-95 transition"
-          >
-            <ArrowLeft size={19} />
-          </button>
-        </Link>
+        <button
+          type="button"
+          onClick={handleBack}
+          className="w-10 h-10 rounded-full bg-white border border-[#E7E8EC] flex items-center justify-center active:scale-95 transition"
+          aria-label="Go back"
+        >
+          <ArrowLeft size={19} />
+        </button>
 
         <span className="text-[15px] font-semibold tracking-[-0.02em]">
           Denverr
@@ -265,12 +274,13 @@ export default function SignUp() {
         {/* Login */}
         <p className="text-center text-sm text-[#7A7D85] mt-5">
           Already on Denverr?{" "}
-          <a
+          <Link
             href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+            replace
             className="text-[#111318] font-semibold"
           >
             Log in
-          </a>
+          </Link>
         </p>
 
         {/* Terms */}
