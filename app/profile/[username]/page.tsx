@@ -15,11 +15,13 @@ import {
   LogOut,
 } from "lucide-react";
 import ReactionButton from "@/components/ReactionButton";
+import ImageGallery from "@/components/ImageGallery";
 
 type Post = {
   id: number;
   content: string;
   image_url: string | null;
+  image_urls: string[] | null;
   created_at: string;
 };
 
@@ -169,6 +171,9 @@ export default function Profile() {
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
 
+    // Reset so the same photo can be picked again later
+    e.target.value = "";
+
     if (!file) return;
 
     setUploading(true);
@@ -204,6 +209,21 @@ export default function Profile() {
     setUploading(false);
   }
 
+  async function handleRemovePhoto() {
+    const confirmed = window.confirm("Remove your profile photo?");
+
+    if (!confirmed) return;
+
+    const idOrUsername = params.username as string;
+
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("user_id", idOrUsername);
+
+    setAvatarUrl(null);
+  }
+
   async function handleDeletePost(postId: number) {
     const confirmed = window.confirm(
       "Delete this post? This can't be undone."
@@ -214,6 +234,8 @@ export default function Profile() {
     await supabase.from("comments").delete().eq("post_id", postId);
 
     await supabase.from("likes").delete().eq("post_id", postId);
+
+    await supabase.from("saved_posts").delete().eq("post_id", postId);
 
     await supabase.from("posts").delete().eq("id", postId);
 
@@ -310,6 +332,15 @@ export default function Profile() {
                 Updating photo...
               </p>
             )}
+
+            {isOwnProfile && avatarUrl && !uploading && (
+              <button
+                onClick={handleRemovePhoto}
+                className="text-[12px] font-semibold text-[#C62828] mt-2"
+              >
+                Remove photo
+              </button>
+            )}
           </div>
         </div>
 
@@ -368,6 +399,27 @@ export default function Profile() {
         </div>
       </section>
 
+      {/* FEEDBACK (own profile only) */}
+      {isOwnProfile && (
+        <section className="px-6 mt-4">
+          <Link href="/feedback">
+            <div className="bg-white border border-[#E7E9ED] rounded-[20px] px-5 py-4 flex items-center gap-3 active:scale-[0.99] transition">
+              <div className="w-9 h-9 rounded-full bg-[#F1F3F5] flex items-center justify-center flex-shrink-0">
+                <MessageCircle size={17} strokeWidth={1.8} />
+              </div>
+
+              <div>
+                <p className="text-[14px] font-semibold">Send feedback</p>
+
+                <p className="text-[12px] text-[#8A8F98] mt-0.5">
+                  Tell us what to improve.
+                </p>
+              </div>
+            </div>
+          </Link>
+        </section>
+      )}
+
       {/* POST CONTENT */}
       <section className="mt-5">
         {postsLoading && (
@@ -388,64 +440,68 @@ export default function Profile() {
           </div>
         )}
 
-        {posts.map((post) => (
-          <article key={post.id} className="mb-10">
-            {/* TIME */}
-            <div className="px-6 flex items-center justify-between">
-              <span className="text-[11px] text-[#969BA4]">
-                {timeAgo(post.created_at)}
-              </span>
+        {posts.map((post) => {
+          const images =
+            post.image_urls && post.image_urls.length > 0
+              ? post.image_urls
+              : post.image_url
+              ? [post.image_url]
+              : [];
 
-              {isOwnProfile && (
-                <button
-                  onClick={() => handleDeletePost(post.id)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[#969BA4] hover:bg-[#ECEEF1] hover:text-red-500 transition"
-                  aria-label="Delete post"
-                >
-                  <Trash2 size={16} strokeWidth={1.8} />
-                </button>
-              )}
-            </div>
+          return (
+            <article key={post.id} className="mb-10">
+              {/* TIME */}
+              <div className="px-6 flex items-center justify-between">
+                <span className="text-[11px] text-[#969BA4]">
+                  {timeAgo(post.created_at)}
+                </span>
 
-            {/* IMAGE */}
-            {post.image_url && (
-              <div className="px-3 mt-3">
-                <Link href={`/comments/${post.id}`}>
-                  <div className="overflow-hidden rounded-[24px] bg-[#111318]">
-                    <img
-                      src={post.image_url}
-                      alt="Post image"
-                      className="w-full max-h-[620px] object-cover"
-                    />
-                  </div>
-                </Link>
-              </div>
-            )}
-
-            {/* CAPTION */}
-            <div className="px-6 mt-4">
-              <p className="text-[15px] leading-[1.55]">
-                <span className="font-semibold mr-1.5">{displayName}</span>
-
-                <span className="text-[#252932]">{post.content}</span>
-              </p>
-
-              {/* ACTIONS */}
-              <div className="flex items-center gap-5 mt-4">
-                <ReactionButton postId={post.id} />
-
-                <Link href={`/comments/${post.id}`}>
+                {isOwnProfile && (
                   <button
-                    className="flex items-center justify-center text-[#555B65] hover:text-[#111318] transition"
-                    aria-label="Comments"
+                    onClick={() => handleDeletePost(post.id)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[#969BA4] hover:bg-[#ECEEF1] hover:text-red-500 transition"
+                    aria-label="Delete post"
                   >
-                    <MessageCircle size={21} strokeWidth={1.8} />
+                    <Trash2 size={16} strokeWidth={1.8} />
                   </button>
-                </Link>
+                )}
               </div>
-            </div>
-          </article>
-        ))}
+
+              {/* PHOTOS */}
+              {images.length > 0 && (
+                <div className="px-3 mt-3">
+                  <ImageGallery
+                    images={images}
+                    href={`/comments/${post.id}`}
+                  />
+                </div>
+              )}
+
+              {/* CAPTION */}
+              <div className="px-6 mt-4">
+                <p className="text-[15px] leading-[1.55]">
+                  <span className="font-semibold mr-1.5">{displayName}</span>
+
+                  <span className="text-[#252932]">{post.content}</span>
+                </p>
+
+                {/* ACTIONS */}
+                <div className="flex items-center gap-5 mt-4">
+                  <ReactionButton postId={post.id} />
+
+                  <Link href={`/comments/${post.id}`}>
+                    <button
+                      className="flex items-center justify-center text-[#555B65] hover:text-[#111318] transition"
+                      aria-label="Comments"
+                    >
+                      <MessageCircle size={21} strokeWidth={1.8} />
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </section>
 
       {/* BOTTOM NAV */}
