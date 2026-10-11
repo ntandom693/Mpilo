@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CommentLikeButton from "@/components/CommentLikeButton";
+import ImageGallery from "@/components/ImageGallery";
 
 type Comment = {
   id: number;
@@ -19,6 +20,7 @@ type PostPreview = {
   content: string;
   authorName: string;
   authorAvatar: string | null;
+  images: string[];
 };
 
 export default function CommentsPage() {
@@ -38,7 +40,7 @@ export default function CommentsPage() {
     async function load() {
       const { data: postData } = await supabase
         .from("posts")
-        .select("content, user_id")
+        .select("content, user_id, image_url, image_urls")
         .eq("id", postId)
         .single();
 
@@ -59,10 +61,18 @@ export default function CommentsPage() {
           }
         }
 
+        const images: string[] =
+          postData.image_urls && postData.image_urls.length > 0
+            ? postData.image_urls
+            : postData.image_url
+            ? [postData.image_url]
+            : [];
+
         setPost({
           content: postData.content,
           authorName,
           authorAvatar,
+          images,
         });
       }
 
@@ -221,6 +231,13 @@ export default function CommentsPage() {
                 </p>
               </div>
             </div>
+
+            {/* PHOTOS */}
+            {post.images.length > 0 && (
+              <div className="mt-4">
+                <ImageGallery images={post.images} />
+              </div>
+            )}
           </div>
         </section>
       )}
