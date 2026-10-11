@@ -7,9 +7,11 @@ export default function Home() {
       {/* CENTER */}
       <section className="flex-1 flex flex-col items-center justify-center text-center">
 
-        <div className="w-[72px] h-[72px] rounded-[20px] bg-[#111318] text-white flex items-center justify-center text-[32px] font-semibold shadow-sm">
-          D
-        </div>
+        <img
+          src="/logo.png"
+          alt="Denverr"
+          className="w-[72px] h-[72px] rounded-[16px] shadow-sm"
+        />
 
         <h1 className="mt-6 text-[28px] leading-none font-semibold tracking-[-0.04em]">
           Denverr
