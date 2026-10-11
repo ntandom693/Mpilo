@@ -11,96 +11,54 @@ export default function Home() {
             Denverr
           </span>
 
-          <div className="flex items-center gap-5">
-            <Link
-              href="/login?returnTo=/stay"
-              className="text-sm font-medium text-gray-500 hover:text-[#111318] transition"
-            >
-              Log in
-            </Link>
-
-            <Link
-              href="/feed"
-              className="text-sm font-medium text-gray-500 hover:text-[#111318] transition"
-            >
-              Explore
-            </Link>
-          </div>
+          <Link
+            href="/login?returnTo=/feed"
+            className="text-sm font-semibold text-[#111318] hover:opacity-70 transition"
+          >
+            Log in
+          </Link>
         </div>
       </header>
 
       {/* HERO */}
       <section className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-3xl text-center">
+        <div className="w-full max-w-md text-center">
 
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-400">
-            Your digital campus
-          </p>
-
-          <h1 className="mt-5 text-6xl sm:text-8xl font-bold tracking-[-0.06em]">
-            Denverr
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-[-0.05em] leading-[1.03]">
+            Your campus,
+            <br />
+            your people.
           </h1>
 
-          <p className="mt-5 text-lg text-gray-500">
-            Your campus, your people.
+          <p className="mt-5 text-[17px] leading-7 text-gray-500">
+            Share what's happening and find a place to stay.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div className="mt-9 flex flex-col gap-3">
 
             <Link
-              href="/feed"
-              className="px-6 py-3 rounded-full bg-white border border-gray-200 text-sm font-semibold hover:bg-gray-50 active:scale-[0.98] transition"
-            >
-              Explore
-            </Link>
-
-            <Link
-              href="/signup?returnTo=/stay"
-              className="px-6 py-3 rounded-full bg-[#111318] text-white text-sm font-semibold hover:bg-black active:scale-[0.98] transition"
+              href="/signup?returnTo=/feed"
+              className="w-full py-4 rounded-full bg-[#111318] text-white text-[15px] font-semibold hover:bg-black active:scale-[0.98] transition"
             >
               Join Denverr
             </Link>
 
-          </div>
-
-          {/* PRODUCT PREVIEW */}
-          <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
-
             <Link
               href="/feed"
-              className="rounded-[24px] bg-white border border-gray-200/70 p-5 text-left shadow-sm hover:-translate-y-0.5 transition"
+              className="w-full py-4 rounded-full bg-white border border-gray-200 text-[15px] font-semibold hover:bg-gray-50 active:scale-[0.98] transition"
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                Feed
-              </p>
-
-              <h2 className="mt-2 text-xl font-semibold tracking-tight">
-                See what's happening.
-              </h2>
-
-              <p className="mt-1.5 text-sm text-gray-500">
-                What's happening around your campus.
-              </p>
-            </Link>
-
-            <Link
-              href="/stay"
-              className="rounded-[24px] bg-[#111318] p-5 text-left text-white shadow-sm hover:-translate-y-0.5 transition"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
-                Stay
-              </p>
-
-              <h2 className="mt-2 text-xl font-semibold tracking-tight">
-                Find your place.
-              </h2>
-
-              <p className="mt-1.5 text-sm text-white/55">
-                Student-focused places to stay.
-              </p>
+              Explore
             </Link>
 
           </div>
+
+          <Link
+            href="/stay"
+            className="mt-8 inline-block text-sm text-gray-500 hover:text-[#111318] transition"
+          >
+            Looking for a place to stay?{" "}
+            <span className="font-semibold text-[#111318]">Browse Stay →</span>
+          </Link>
 
         </div>
       </section>
