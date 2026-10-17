@@ -15,6 +15,12 @@ const GENDER_OPTIONS = [
   { value: "male", label: "Males only" },
 ];
 
+const PAYMENT_OPTIONS = [
+  { value: "nsfas", label: "NSFAS only" },
+  { value: "self", label: "Self-paying only" },
+  { value: "both", label: "Both" },
+];
+
 type Unit = {
   roomType: string;
   price: string;
@@ -35,6 +41,7 @@ export default function UploadRoom() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [hasShuttle, setHasShuttle] = useState<boolean | null>(null);
   const [genderPolicy, setGenderPolicy] = useState("");
+  const [paymentType, setPaymentType] = useState("");
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -117,6 +124,7 @@ export default function UploadRoom() {
         phone_number: phoneNumber,
         has_shuttle: hasShuttle,
         gender_policy: genderPolicy,
+        payment_type: paymentType,
       })
       .select()
       .single();
@@ -149,20 +157,21 @@ export default function UploadRoom() {
     router.push("/stay");
   }
 
-  const shuttleAndGenderChosen = hasShuttle !== null && genderPolicy !== "";
+  const extraDetailsChosen =
+    hasShuttle !== null && genderPolicy !== "" && paymentType !== "";
 
   const canPost = isResidence
     ? title.trim() !== "" &&
       area.trim() !== "" &&
       phoneNumber.trim() !== "" &&
-      shuttleAndGenderChosen &&
+      extraDetailsChosen &&
       units.some((u) => u.roomType.trim() !== "" && u.price.trim() !== "")
     : title.trim() !== "" &&
       area.trim() !== "" &&
       price.trim() !== "" &&
       roomType.trim() !== "" &&
       phoneNumber.trim() !== "" &&
-      shuttleAndGenderChosen;
+      extraDetailsChosen;
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] text-[#111318] pb-32">
@@ -399,6 +408,29 @@ export default function UploadRoom() {
             placeholder="e.g. Jan 2027"
             className="w-full h-[52px] bg-white border border-[#E7E9ED] rounded-[18px] px-4 text-[14px] outline-none placeholder:text-[#A2A6AE] focus:border-[#C9CDD4] transition"
           />
+        </div>
+
+        {/* Payment type */}
+        <div>
+          <p className="text-xs font-semibold text-[#8B8E97] uppercase tracking-[0.08em] mb-1.5">
+            Who can pay?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {PAYMENT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setPaymentType(option.value)}
+                className={
+                  paymentType === option.value
+                    ? "bg-[#111318] text-white px-4 py-2.5 rounded-full text-sm font-medium"
+                    : "bg-white border border-[#E7E9ED] text-[#555860] px-4 py-2.5 rounded-full text-sm font-medium"
+                }
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Shuttle */}
