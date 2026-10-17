@@ -10,6 +10,8 @@ import {
   MapPin,
   ShieldCheck,
   MessageCircle,
+  Bus,
+  Users,
 } from "lucide-react";
 
 type Unit = {
@@ -33,6 +35,8 @@ type Listing = {
   is_residence: boolean;
   user_id: string | null;
   phone_number: string | null;
+  has_shuttle: boolean | null;
+  gender_policy: string | null;
 };
 
 function formatForWhatsApp(phone: string) {
@@ -43,6 +47,13 @@ function formatForWhatsApp(phone: string) {
   }
 
   return digitsOnly;
+}
+
+function genderPolicyLabel(policy: string | null) {
+  if (policy === "female") return "Females only";
+  if (policy === "male") return "Males only";
+  if (policy === "all") return "All genders";
+  return null;
 }
 
 export default function RoomDetail() {
@@ -164,6 +175,10 @@ export default function RoomDetail() {
     : [];
 
   const locationText = listing.area || listing.location;
+
+  const genderLabel = genderPolicyLabel(listing.gender_policy);
+  const hasShuttleInfo = listing.has_shuttle !== null && listing.has_shuttle !== undefined;
+  const showGoodToKnow = hasShuttleInfo || genderLabel !== null;
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] text-[#111318] pb-32">
@@ -386,6 +401,67 @@ export default function RoomDetail() {
 
               </div>
             ))}
+
+          </div>
+
+        </section>
+      )}
+
+      {/* Good to know: shuttle + gender */}
+      {showGoodToKnow && (
+        <section className="px-5 mt-9">
+
+          <p className="text-xs font-semibold text-[#8B8E97] uppercase tracking-[0.08em]">
+            Good to know
+          </p>
+
+          <div className="mt-3 bg-white border border-[#E7E8EC] rounded-[22px] overflow-hidden">
+
+            {hasShuttleInfo && (
+              <div
+                className={`flex items-center gap-3 px-5 py-4 ${
+                  genderLabel ? "border-b border-[#E7E8EC]" : ""
+                }`}
+              >
+
+                <div className="w-9 h-9 rounded-full bg-[#F1F3F5] flex items-center justify-center flex-shrink-0">
+                  <Bus size={18} strokeWidth={1.8} />
+                </div>
+
+                <div>
+                  <p className="text-[15px] font-semibold">
+                    {listing.has_shuttle ? "Shuttle available" : "No shuttle"}
+                  </p>
+
+                  <p className="text-xs text-[#8B8E97] mt-0.5">
+                    {listing.has_shuttle
+                      ? "Transport to campus is offered"
+                      : "Transport to campus is not offered"}
+                  </p>
+                </div>
+
+              </div>
+            )}
+
+            {genderLabel && (
+              <div className="flex items-center gap-3 px-5 py-4">
+
+                <div className="w-9 h-9 rounded-full bg-[#F1F3F5] flex items-center justify-center flex-shrink-0">
+                  <Users size={18} strokeWidth={1.8} />
+                </div>
+
+                <div>
+                  <p className="text-[15px] font-semibold">
+                    {genderLabel}
+                  </p>
+
+                  <p className="text-xs text-[#8B8E97] mt-0.5">
+                    Who this accommodation is for
+                  </p>
+                </div>
+
+              </div>
+            )}
 
           </div>
 
