@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Bus,
   Users,
+  Wallet,
 } from "lucide-react";
 
 type Unit = {
@@ -37,6 +38,7 @@ type Listing = {
   phone_number: string | null;
   has_shuttle: boolean | null;
   gender_policy: string | null;
+  payment_type: string | null;
 };
 
 function formatForWhatsApp(phone: string) {
@@ -53,6 +55,13 @@ function genderPolicyLabel(policy: string | null) {
   if (policy === "female") return "Females only";
   if (policy === "male") return "Males only";
   if (policy === "all") return "All genders";
+  return null;
+}
+
+function paymentTypeLabel(type: string | null) {
+  if (type === "nsfas") return "NSFAS only";
+  if (type === "self") return "Self-paying only";
+  if (type === "both") return "NSFAS & self-paying";
   return null;
 }
 
@@ -176,9 +185,11 @@ export default function RoomDetail() {
 
   const locationText = listing.area || listing.location;
 
+  const paymentLabel = paymentTypeLabel(listing.payment_type);
   const genderLabel = genderPolicyLabel(listing.gender_policy);
-  const hasShuttleInfo = listing.has_shuttle !== null && listing.has_shuttle !== undefined;
-  const showGoodToKnow = hasShuttleInfo || genderLabel !== null;
+  const hasShuttleInfo =
+    listing.has_shuttle !== null && listing.has_shuttle !== undefined;
+  const showGoodToKnow = paymentLabel !== null || hasShuttleInfo || genderLabel !== null;
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] text-[#111318] pb-32">
@@ -407,7 +418,7 @@ export default function RoomDetail() {
         </section>
       )}
 
-      {/* Good to know: shuttle + gender */}
+      {/* Good to know: payment + shuttle + gender */}
       {showGoodToKnow && (
         <section className="px-5 mt-9">
 
@@ -415,14 +426,30 @@ export default function RoomDetail() {
             Good to know
           </p>
 
-          <div className="mt-3 bg-white border border-[#E7E8EC] rounded-[22px] overflow-hidden">
+          <div className="mt-3 bg-white border border-[#E7E8EC] rounded-[22px] overflow-hidden divide-y divide-[#E7E8EC]">
+
+            {paymentLabel && (
+              <div className="flex items-center gap-3 px-5 py-4">
+
+                <div className="w-9 h-9 rounded-full bg-[#F1F3F5] flex items-center justify-center flex-shrink-0">
+                  <Wallet size={18} strokeWidth={1.8} />
+                </div>
+
+                <div>
+                  <p className="text-[15px] font-semibold">
+                    {paymentLabel}
+                  </p>
+
+                  <p className="text-xs text-[#8B8E97] mt-0.5">
+                    Who can pay for this room
+                  </p>
+                </div>
+
+              </div>
+            )}
 
             {hasShuttleInfo && (
-              <div
-                className={`flex items-center gap-3 px-5 py-4 ${
-                  genderLabel ? "border-b border-[#E7E8EC]" : ""
-                }`}
-              >
+              <div className="flex items-center gap-3 px-5 py-4">
 
                 <div className="w-9 h-9 rounded-full bg-[#F1F3F5] flex items-center justify-center flex-shrink-0">
                   <Bus size={18} strokeWidth={1.8} />
