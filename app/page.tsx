@@ -27,17 +27,17 @@ export default function Home() {
       <section className="w-full max-w-sm mx-auto pb-[max(1.25rem,env(safe-area-inset-bottom))]">
 
         <Link
-          href="/signup?returnTo=/feed"
-          className="block w-full text-center bg-[#111318] text-white py-4 rounded-2xl font-semibold text-[15px] active:scale-[0.99] transition"
+          href="/feed"
+          className="block w-full text-center bg-white border border-[#E7E8EC] text-[#111318] py-4 rounded-2xl font-semibold text-[15px] active:scale-[0.99] transition"
         >
-          Join Denverr
+          Explore
         </Link>
 
         <Link
-          href="/feed"
-          className="block w-full text-center mt-3 bg-white border border-[#E7E8EC] text-[#111318] py-4 rounded-2xl font-semibold text-[15px] active:scale-[0.99] transition"
+          href="/signup?returnTo=/feed"
+          className="block w-full text-center mt-3 bg-[#111318] text-white py-4 rounded-2xl font-semibold text-[15px] active:scale-[0.99] transition"
         >
-          Explore
+          Join Denverr
         </Link>
 
         <p className="text-center text-sm text-[#7A7D85] mt-5">
