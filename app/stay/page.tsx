@@ -36,8 +36,17 @@ type Listing = {
   available_from: string | null;
   is_residence: boolean;
   user_id: string | null;
+  payment_type: string | null;
   units: Unit[];
 };
+
+type PaymentFilter = "all" | "nsfas" | "self";
+
+const PAYMENT_FILTERS: { value: PaymentFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "nsfas", label: "NSFAS" },
+  { value: "self", label: "Self-paying" },
+];
 
 export default function Stay() {
   const router = useRouter();
@@ -46,6 +55,7 @@ export default function Stay() {
   const [loading, setLoading] = useState(true);
   const [myId, setMyId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
 
   useEffect(() => {
     async function init() {
@@ -146,6 +156,20 @@ export default function Stay() {
   }
 
   const filteredListings = listings.filter((listing) => {
+    // Payment filter
+    if (paymentFilter === "nsfas") {
+      if (listing.payment_type !== "nsfas" && listing.payment_type !== "both") {
+        return false;
+      }
+    }
+
+    if (paymentFilter === "self") {
+      if (listing.payment_type !== "self" && listing.payment_type !== "both") {
+        return false;
+      }
+    }
+
+    // Search
     if (searchTerm.trim() === "") return true;
 
     const term = searchTerm.toLowerCase();
@@ -201,6 +225,24 @@ export default function Stay() {
             placeholder="Search an area or place..."
             className="w-full h-[52px] bg-white border border-[#E7E9ED] rounded-[18px] pl-11 pr-4 text-[14px] outline-none placeholder:text-[#A2A6AE] focus:border-[#C9CDD4] transition"
           />
+        </div>
+
+        {/* PAYMENT FILTER */}
+        <div className="flex gap-2 mt-3">
+          {PAYMENT_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => setPaymentFilter(filter.value)}
+              className={
+                paymentFilter === filter.value
+                  ? "bg-[#111318] text-white px-4 py-2 rounded-full text-[13px] font-medium transition"
+                  : "bg-white border border-[#E7E9ED] text-[#555860] px-4 py-2 rounded-full text-[13px] font-medium transition"
+              }
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -274,7 +316,7 @@ export default function Stay() {
             <p className="text-[#8A8F98] text-[13px] leading-5 mt-2 max-w-[280px] mx-auto">
               {listings.length === 0
                 ? "Be one of the first people to put a place on Denverr."
-                : "Try searching for another area or place."}
+                : "Try another area, place or filter."}
             </p>
 
             {listings.length === 0 && (
@@ -321,6 +363,16 @@ export default function Stay() {
                         : listing.room_type || "Accommodation"}
                     </span>
                   </div>
+
+                  {/* NSFAS TAG */}
+                  {(listing.payment_type === "nsfas" ||
+                    listing.payment_type === "both") && (
+                    <div className="absolute bottom-4 left-4">
+                      <span className="bg-[#111318]/90 backdrop-blur-sm text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-sm">
+                        NSFAS accepted
+                      </span>
+                    </div>
+                  )}
 
                   {/* DELETE */}
                   {listing.user_id === myId && (
