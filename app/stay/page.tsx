@@ -15,6 +15,7 @@ import {
   MapPin,
   ShieldCheck,
   ChevronRight,
+  Check,
 } from "lucide-react";
 
 type Unit = {
@@ -37,6 +38,7 @@ type Listing = {
   is_residence: boolean;
   user_id: string | null;
   payment_type: string | null;
+  is_verified: boolean | null;
   units: Unit[];
 };
 
@@ -47,6 +49,20 @@ const PAYMENT_FILTERS: { value: PaymentFilter; label: string }[] = [
   { value: "nsfas", label: "NSFAS" },
   { value: "self", label: "Self-paying" },
 ];
+
+// Small dark circle with a white tick. Same look as the "+" button
+// next to "List a place", so it feels like part of the app.
+function VerifiedTick() {
+  return (
+    <span
+      aria-label="Verified"
+      title="Verified"
+      className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#111318] text-white align-middle"
+    >
+      <Check size={11} strokeWidth={3.2} />
+    </span>
+  );
+}
 
 export default function Stay() {
   const router = useRouter();
@@ -393,6 +409,11 @@ export default function Stay() {
                   <div className="min-w-0">
                     <h3 className="text-[20px] font-bold tracking-[-0.025em] leading-tight">
                       {listing.title}
+                      {listing.is_verified && (
+                        <span className="ml-2 inline-block align-middle -mt-0.5">
+                          <VerifiedTick />
+                        </span>
+                      )}
                     </h3>
 
                     {listing.service_provider && (
