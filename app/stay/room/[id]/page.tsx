@@ -8,11 +8,11 @@ import {
   ArrowLeft,
   ChevronDown,
   MapPin,
-  ShieldCheck,
   MessageCircle,
   Bus,
   Users,
   Wallet,
+  Check,
 } from "lucide-react";
 
 type Unit = {
@@ -39,6 +39,7 @@ type Listing = {
   has_shuttle: boolean | null;
   gender_policy: string | null;
   payment_type: string | null;
+  is_verified: boolean | null;
 };
 
 function formatForWhatsApp(phone: string) {
@@ -63,6 +64,21 @@ function paymentTypeLabel(type: string | null) {
   if (type === "self") return "Self-paying only";
   if (type === "both") return "NSFAS & self-paying";
   return null;
+}
+
+// Small dark circle with a white tick. Same look as the dark circles
+// used across the app, so it feels like part of the interface.
+function VerifiedTick({ size = 18 }: { size?: number }) {
+  return (
+    <span
+      aria-label="Verified"
+      title="Verified"
+      style={{ width: size, height: size }}
+      className="inline-flex items-center justify-center rounded-full bg-[#111318] text-white flex-shrink-0"
+    >
+      <Check size={Math.round(size * 0.62)} strokeWidth={3.2} />
+    </span>
+  );
 }
 
 export default function RoomDetail() {
@@ -233,17 +249,19 @@ export default function RoomDetail() {
             </div>
           )}
 
-          {/* Verification */}
-          <div className="absolute top-4 left-4">
+          {/* Verified badge: only shown on verified listings */}
+          {listing.is_verified && (
+            <div className="absolute top-4 left-4">
 
-            <div className="bg-white/95 backdrop-blur-md rounded-full px-3 py-2 flex items-center gap-1.5 shadow-sm">
-              <ShieldCheck size={15} />
-              <span className="text-xs font-semibold">
-                Denverr listing
-              </span>
+              <div className="bg-white/95 backdrop-blur-md rounded-full pl-2 pr-3 py-1.5 flex items-center gap-2 shadow-sm">
+                <VerifiedTick size={18} />
+                <span className="text-xs font-semibold">
+                  Verified
+                </span>
+              </div>
+
             </div>
-
-          </div>
+          )}
 
         </div>
 
@@ -546,7 +564,7 @@ export default function RoomDetail() {
 
           </div>
 
-          <ShieldCheck size={19} className="text-[#111318]" />
+          {listing.is_verified && <VerifiedTick size={22} />}
 
         </div>
 
