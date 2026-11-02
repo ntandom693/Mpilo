@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+
+// WhatsApp number that receives accreditation proof (international format,
+// no + or spaces). Change this if you want proof sent to a different number.
+const ACCREDITATION_WHATSAPP = "27697858221";
 
 const AMENITY_OPTIONS = ["Wifi", "Laundry", "Furnished", "Parking", "Water included", "Electricity included"];
 const ROOM_TYPES = ["Bachelor", "Private room", "Shared room", "Studio"];
@@ -46,6 +50,11 @@ export default function UploadRoom() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Accreditation pop-up (shown after the listing is saved)
+  const [showAccreditation, setShowAccreditation] = useState(false);
+  const [postedListingId, setPostedListingId] = useState<number | null>(null);
+
   const router = useRouter();
 
   function toggleAmenity(amenity: string) {
@@ -154,6 +163,71 @@ export default function UploadRoom() {
     }
 
     setUploading(false);
+
+    // Listing is saved. Ask about accreditation before leaving the page.
+    setPostedListingId(newListing.id);
+    setShowAccreditation(true);
+  }
+
+  // Builds the WhatsApp message with all the listing info filled in.
+  function buildAccreditationMessage() {
+    const genderLabel =
+      GENDER_OPTIONS.find((o) => o.value === genderPolicy)?.label || "";
+    const paymentLabel =
+      PAYMENT_OPTIONS.find((o) => o.value === paymentType)?.label || "";
+
+    const validUnits = units.filter(
+      (u) => u.roomType.trim() !== "" && u.price.trim() !== ""
+    );
+
+    const lines: string[] = [
+      "Hi Denverr, I'd like to prove my accreditation for my listing.",
+      "",
+      `Listing: ${title}`,
+    ];
+
+    if (postedListingId !== null) {
+      lines.push(`Link: https://denverr.co.za/stay/room/${postedListingId}`);
+    }
+
+    if (serviceProvider.trim()) lines.push(`Service provider: ${serviceProvider}`);
+
+    lines.push(`Type: ${isResidence ? "Residence" : roomType}`);
+
+    if (area.trim()) lines.push(`Area: ${area}`);
+    if (distanceFromCampus.trim()) lines.push(`Distance from campus: ${distanceFromCampus}`);
+
+    if (isResidence) {
+      if (validUnits.length > 0) {
+        lines.push("Rooms:");
+        validUnits.forEach((u) => lines.push(`- ${u.roomType}: ${u.price}`));
+      }
+    } else if (price.trim()) {
+      lines.push(`Price: ${price}`);
+    }
+
+    if (availableFrom.trim()) lines.push(`Available from: ${availableFrom}`);
+    if (hasShuttle !== null) lines.push(`Shuttle to campus: ${hasShuttle ? "Yes" : "No"}`);
+    if (genderLabel) lines.push(`Who is it for: ${genderLabel}`);
+    if (paymentLabel) lines.push(`Who can pay: ${paymentLabel}`);
+    if (selectedAmenities.length > 0) lines.push(`Amenities: ${selectedAmenities.join(", ")}`);
+    if (phoneNumber.trim()) lines.push(`WhatsApp number: ${phoneNumber}`);
+
+    lines.push("", "I'll send my proof of accreditation in this chat.");
+
+    return lines.join("\n");
+  }
+
+  function handleProveAccreditation() {
+    const url = `https://wa.me/${ACCREDITATION_WHATSAPP}?text=${encodeURIComponent(
+      buildAccreditationMessage()
+    )}`;
+
+    window.open(url, "_blank");
+    router.push("/stay");
+  }
+
+  function handleSkipAccreditation() {
     router.push("/stay");
   }
 
@@ -523,6 +597,40 @@ export default function UploadRoom() {
           </button>
         </div>
       </div>
+
+      {/* Accreditation pop-up */}
+      {showAccreditation && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-6 bg-[#111318]/30 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-white rounded-[26px] border border-[#E7E9ED] px-6 py-7 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-[#F1F3F5] mx-auto flex items-center justify-center">
+              <ShieldCheck size={22} strokeWidth={1.8} />
+            </div>
+
+            <h2 className="mt-5 text-[18px] font-bold tracking-[-0.02em]">
+              Your listing is live
+            </h2>
+
+            <p className="mt-2 text-[14px] leading-5 text-[#7A7D85]">
+              Want to prove your accreditation? Verified listings get a tick
+              that students notice.
+            </p>
+
+            <button
+              onClick={handleProveAccreditation}
+              className="w-full mt-6 bg-[#111318] text-white py-3.5 rounded-[16px] text-[14px] font-semibold active:scale-[0.985] transition"
+            >
+              Yes, send proof on WhatsApp
+            </button>
+
+            <button
+              onClick={handleSkipAccreditation}
+              className="w-full mt-2 py-3 text-[14px] font-medium text-[#7A7D85]"
+            >
+              Not now
+            </button>
+          </div>
+        </div>
+      )}
 
     </main>
   );
